@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Chase Quiz - Control Panel</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1a3a68;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #234980;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #add8e6;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3a7bd5;
+        }
+
+        .controls {
+            background-color: #2c5999;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .question-setup {
+            background-color: #2c5999;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .status-panel {
+            background-color: #2c5999;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #5d7dc0;
+            background-color: #1c3b6e;
+            color: white;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        button {
+            background-color: #3a7bd5;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #4a8be5;
+        }
+
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        button.critical {
+            background-color: #d53a3a;
+        }
+
+        button.critical:hover {
+            background-color: #e54a4a;
+        }
+
+        button.success {
+            background-color: #3ad555;
+        }
+
+        button.success:hover {
+            background-color: #4ae565;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .question-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #1c3b6e;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 15px;
+        }
+
+        .question-item {
+            padding: 10px;
+            border-bottom: 1px solid #3a7bd5;
+            cursor: pointer;
+        }
+
+        .question-item:hover {
+            background-color: #2c5999;
+        }
+
+        .correct-answer {
+            color: #3ad555;
+            font-weight: bold;
+        }
+
+        .status {
+            color: #add8e6;
+            font-style: italic;
+            margin-top: 10px;
+        }
+
+        .connection-status {
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .connection-status.connected {
+            background-color: #3ad555;
+        }
+
+        .connection-status.disconnected {
+            background-color: #d53a3a;
+        }
+
+        .section-title {
+            margin-top: 0;
+            color: #add8e6;
+        }
+
+        .option-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .option-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .option-label {
+            font-weight: bold;
+            color: #add8e6;
+            margin-bottom: 5px;
+        }
+
+        #save-question {
+            margin-top: 15px;
+        }
+
+        #questions-json {
+            height: 120px;
+            font-family: monospace;
+            white-space: pre;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>The Chase Quiz - Control Panel</h1>
+        
+        <div class="status-panel">
+            <h2 class="section-title">Connection Status</h2>
+            <div>
+                WebSocket: <span id="ws-status" class="connection-status disconnected">Disconnected</span>
+            </div>
+            <div class="status" id="status-message">Ready to start...</div>
+        </div>
+
+        <div class="controls">
+            <h2 class="section-title">Quiz Flow Control</h2>
+            <div class="button-row">
+                <button id="show-question">1. Show Question</button>
+                <button id="show-options">2. Show Options</button>
+                <button id="show-contestant">3. Contestant Answer</button>
+                <button id="show-correct">4. Reveal Correct</button>
+                <button id="show-chaser">5. Chaser Answer</button>
+                <button id="fade-out">6. Fade Out</button>
+                <button id="reset" class="critical">Reset Display</button>
+            </div>
+        </div>
+        
+        <div class="question-setup">
+            <h2 class="section-title">Current Question</h2>
+            
+            <label for="question-text">Question:</label>
+            <textarea id="question-text" placeholder="Enter question here"></textarea>
+            
+            <div class="option-grid">
+                <div class="option-container">
+                    <label class="option-label">Option A:</label>
+                    <input type="text" id="option-a" placeholder="Option A">
+                </div>
+                <div class="option-container">
+                    <label class="option-label">Option B:</label>
+                    <input type="text" id="option-b" placeholder="Option B">
+                </div>
+                <div class="option-container">
+                    <label class="option-label">Option C:</label>
+                    <input type="text" id="option-c" placeholder="Option C">
+                </div>
+                <div class="option-container">
+                    <label class="option-label">Option D:</label>
+                    <input type="text" id="option-d" placeholder="Option D">
+                </div>
+            </div>
+            
+            <div class="option-grid">
+                <div class="option-container">
+                    <label class="option-label">Correct Answer:</label>
+                    <select id="correct-answer">
+                        <option value="a">A</option>
+                        <option value="b">B</option>
+                        <option value="c">C</option>
+                        <option value="d">D</option>
+                    </select>
+                </div>
+                <div class="option-container">
+                    <label class="option-label">Contestant Selected:</label>
+                    <select id="contestant-answer">
+                        <option value="a">A</option>
+                        <option value="b">B</option>
+                        <option value="c">C</option>
+                        <option value="d">D</option>
+                    </select>
+                </div>
+                <div class="option-container">
+                    <label class="option-label">Chaser Selected:</label>
+                    <select id="chaser-answer">
+                        <option value="a">A</option>
+                        <option value="b">B</option>
+                        <option value="c">C</option>
+                        <option value="d">D</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button id="save-question" class="success">Save Question</button>
+        </div>
+        
+        <div class="question-setup">
+            <h2 class="section-title">Question Bank</h2>
+            
+            <label for="questions-json">Questions JSON:</label>
+            <textarea id="questions-json" placeholder="Questions will appear here in JSON format"></textarea>
+            
+            <div class="button-row">
+                <button id="load-json">Load Questions from JSON</button>
+                <button id="save-json">Save Questions to JSON</button>
+                <button id="clear-questions" class="critical">Clear All Questions</button>
+            </div>
+            
+            <h3>Saved Questions:</h3>
+            <div class="question-list" id="question-list">
+                <!-- Questions will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let socket = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        let questions = [];
+        let currentQuestionIndex = -1;
+        
+        // DOM elements
+        const wsStatusEl = document.getElementById('ws-status');
+        const statusMessageEl = document.getElementById('status-message');
+        
+        // Quiz flow buttons
+        const showQuestionBtn = document.getElementById('show-question');
+        const showOptionsBtn = document.getElementById('show-options');
+        const showContestantBtn = document.getElementById('show-contestant');
+        const showCorrectBtn = document.getElementById('show-correct');
+        const showChaserBtn = document.getElementById('show-chaser');
+        const fadeOutBtn = document.getElementById('fade-out');
+        const resetBtn = document.getElementById('reset');
+        
+        // Question inputs
+        const questionTextEl = document.getElementById('question-text');
+        const optionAEl = document.getElementById('option-a');
+        const optionBEl = document.getElementById('option-b');
+        const optionCEl = document.getElementById('option-c');
+        const optionDEl = document.getElementById('option-d');
+        const correctAnswerEl = document.getElementById('correct-answer');
+        const contestantAnswerEl = document.getElementById('contestant-answer');
+        const chaserAnswerEl = document.getElementById('chaser-answer');
+        const saveQuestionBtn = document.getElementById('save-question');
+        
+        // Question bank elements
+        const questionsJsonEl = document.getElementById('questions-json');
+        const loadJsonBtn = document.getElementById('load-json');
+        const saveJsonBtn = document.getElementById('save-json');
+        const clearQuestionsBtn = document.getElementById('clear-questions');
+        const questionListEl = document.getElementById('question-list');
+        
+        // Initialize WebSocket connection
+        function initWebSocket() {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${window.location.host}`;
+            
+            wsStatusEl.textContent = "Connecting...";
+            wsStatusEl.className = "connection-status disconnected";
+            
+            socket = new WebSocket(wsUrl);
+            
+            socket.onopen = function() {
+                wsStatusEl.textContent = "Connected";
+                wsStatusEl.className = "connection-status connected";
+                reconnectAttempts = 0;
+                updateStatus("Connected to server");
+                enableControlButtons();
+            };
+            
+            socket.onclose = function() {
+                wsStatusEl.textContent = "Disconnected";
+                wsStatusEl.className = "connection-status disconnected";
+                disableControlButtons();
+                
+                // Try to reconnect if not exceeding max attempts
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    const timeout = Math.min(1000 * reconnectAttempts, 5000);
+                    updateStatus(`Connection lost. Reconnecting in ${timeout/1000}s...`);
+                    setTimeout(initWebSocket, timeout);
+                } else {
+                    updateStatus("Connection failed after several attempts. Please refresh the page.");
+                }
+            };
+            
+            socket.onerror = function(error) {
+                wsStatusEl.textContent = "Error";
+                wsStatusEl.className = "connection-status disconnected";
+                updateStatus("WebSocket connection error");
+                console.error("WebSocket error:", error);
+            };
+            
+            socket.onmessage = function(event) {
+                handleMessage(event.data);
+            };
+        }
+        
+        // Handle incoming WebSocket messages (from other control panels)
+        function handleMessage(messageData) {
+            try {
+                const data = JSON.parse(messageData);
+                
+                // Handle any messages we need to react to
+                if (data.action === 'load-question' && data.question) {
+                    // Update current question display
+                    updateStatus(`Question loaded by another control panel: "${data.question.text}"`);
+                }
+            } catch (error) {
+                console.error("Error parsing message:", error);
+            }
+        }
+        
+        // Send message over WebSocket
+        function sendMessage(data) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify(data));
+                return true;
+            } else {
+                updateStatus("Cannot send message - not connected to server");
+                return false;
+            }
+        }
+        
+        // Update status message
+        function updateStatus(message) {
+            statusMessageEl.textContent = message;
+        }
+        
+        // Enable or disable control buttons based on connection status
+        function enableControlButtons() {
+            [showQuestionBtn, showOptionsBtn, showContestantBtn, 
+             showCorrectBtn, showChaserBtn, fadeOutBtn, resetBtn].forEach(btn => {
+                btn.disabled = false;
+            });
+        }
+        
+        function disableControlButtons() {
+            [showQuestionBtn, showOptionsBtn, showContestantBtn, 
+             showCorrectBtn, showChaserBtn, fadeOutBtn, resetBtn].forEach(btn => {
+                btn.disabled = true;
+            });
+        }
+        
+        // Get current question data from form
+        function getCurrentQuestionData() {
+            return {
+                text: questionTextEl.value,
+                options: {
+                    a: optionAEl.value,
+                    b: optionBEl.value,
+                    c: optionCEl.value,
+                    d: optionDEl.value
+                },
+                correctAnswer: correctAnswerEl.value,
+                contestantAnswer: contestantAnswerEl.value,
+                chaserAnswer: chaserAnswerEl.value
+            };
+        }
+        
+        // Validate the current question data
+        function validateQuestionData(data) {
+            if (!data.text || data.text.trim() === "") {
+                updateStatus("Error: Question text cannot be empty");
+                return false;
+            }
+            
+            if (!data.options.a || !data.options.b || !data.options.c || !data.options.d) {
+                updateStatus("Error: All options must be filled in");
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Save current question to question bank
+        function saveQuestion() {
+            const questionData = getCurrentQuestionData();
+            
+            if (!validateQuestionData(questionData)) {
+                return;
+            }
+            
+            if (currentQuestionIndex >= 0 && currentQuestionIndex < questions.length) {
+                // Update existing question
+                questions[currentQuestionIndex] = questionData;
+                updateStatus(`Question #${currentQuestionIndex + 1} updated`);
+            } else {
+                // Add new question
+                questions.push(questionData);
+                currentQuestionIndex = questions.length - 1;
+                updateStatus(`New question saved as #${questions.length}`);
+            }
+            
+            updateQuestionList();
+            updateQuestionsJson();
+        }
+        
+        // Load question data into form
+        function loadQuestionToForm(questionData) {
+            questionTextEl.value = questionData.text || "";
+            optionAEl.value = questionData.options.a || "";
+            optionBEl.value = questionData.options.b || "";
+            optionCEl.value = questionData.options.c || "";
+            optionDEl.value = questionData.options.d || "";
+            correctAnswerEl.value = questionData.correctAnswer || "a";
+            contestantAnswerEl.value = questionData.contestantAnswer || "a";
+            chaserAnswerEl.value = questionData.chaserAnswer || "a";
+        }
+        
+        // Update question list in the UI
+        function updateQuestionList() {
+            questionListEl.innerHTML = "";
+            
+            if (questions.length === 0) {
+                const emptyMessage = document.createElement("div");
+                emptyMessage.className = "question-item";
+                emptyMessage.textContent = "No questions saved yet";
+                questionListEl.appendChild(emptyMessage);
+                return;
+            }
+            
+            questions.forEach((question, index) => {
+                const questionItem = document.createElement("div");
+                questionItem.className = "question-item";
+                questionItem.dataset.index = index;
+                
+                const questionText = document.createElement("div");
+                questionText.textContent = `${index + 1}. ${question.text}`;
+                
+                const questionDetails = document.createElement("div");
+                questionDetails.className = "correct-answer";
+                questionDetails.textContent = `Correct: ${question.correctAnswer.toUpperCase()} (${question.options[question.correctAnswer]})`;
+                
+                questionItem.appendChild(questionText);
+                questionItem.appendChild(questionDetails);
+                
+                questionItem.addEventListener("click", () => {
+                    currentQuestionIndex = index;
+                    loadQuestionToForm(question);
+                    updateStatus(`Loaded question #${index + 1}`);
+                });
+                
+                questionListEl.appendChild(questionItem);
+            });
+        }
+        
+        // Update the JSON text area with the current questions
+        function updateQuestionsJson() {
+            questionsJsonEl.value = JSON.stringify(questions, null, 2);
+        }
+        
+        // Load questions from JSON text area
+        function loadQuestionsFromJson() {
+            try {
+                const jsonText = questionsJsonEl.value;
+                if (!jsonText.trim()) {
+                    updateStatus("No JSON data to load");
+                    return;
+                }
+                
+                const loadedQuestions = JSON.parse(jsonText);
+                
+                if (!Array.isArray(loadedQuestions)) {
+                    updateStatus("Error: Invalid JSON format. Expected an array of questions.");
+                    return;
+                }
+                
+                questions = loadedQuestions;
+                currentQuestionIndex = questions.length > 0 ? 0 : -1;
+                
+                updateQuestionList();
+                
+                if (questions.length > 0) {
+                    loadQuestionToForm(questions[0]);
+                    updateStatus(`Loaded ${questions.length} questions from JSON`);
+                } else {
+                    updateStatus("No questions found in JSON");
+                }
+            } catch (error) {
+                updateStatus(`Error loading JSON: ${error.message}`);
+                console.error("Error loading JSON:", error);
+            }
+        }
+        
+        // Clear all questions
+        function clearQuestions() {
+            if (confirm("Are you sure you want to clear all questions? This cannot be undone.")) {
+                questions = [];
+                currentQuestionIndex = -1;
+                updateQuestionList();
+                updateQuestionsJson();
+                updateStatus("All questions cleared");
+            }
+        }
+        
+        // Show the current question on the overlay
+        function showQuestion() {
+            const questionData = getCurrentQuestionData();
+            
+            if (!validateQuestionData(questionData)) {
+                return;
+            }
+            
+            const success = sendMessage({
+                action: 'load-question',
+                question: questionData
+            });
+            
+            if (success) {
+                updateStatus("Showing question on overlay");
+            }
+        }
+        
+        // Show options on the overlay
+        function showOptions() {
+            const success = sendMessage({
+                action: 'show-options'
+            });
+            
+            if (success) {
+                updateStatus("Showing options on overlay");
+            }
+        }
+        
+        // Show contestant selection on the overlay
+        function showContestant() {
+            const questionData = getCurrentQuestionData();
+            
+            const success = sendMessage({
+                action: 'show-contestant',
+                contestantAnswer: questionData.contestantAnswer
+            });
+            
+            if (success) {
+                updateStatus(`Showing contestant selection: Option ${questionData.contestantAnswer.toUpperCase()}`);
+            }
+        }
+        
+        // Show correct answer on the overlay
+        function showCorrect() {
+            const questionData = getCurrentQuestionData();
+            
+            const success = sendMessage({
+                action: 'show-correct',
+                correctAnswer: questionData.correctAnswer
+            });
+            
+            if (success) {
+                updateStatus(`Showing correct answer: Option ${questionData.correctAnswer.toUpperCase()}`);
+            }
+        }
+        
+        // Show chaser selection on the overlay
+        function showChaser() {
+            const questionData = getCurrentQuestionData();
+            
+            const success = sendMessage({
+                action: 'show-chaser',
+                chaserAnswer: questionData.chaserAnswer
+            });
+            
+            if (success) {
+                updateStatus(`Showing chaser selection: Option ${questionData.chaserAnswer.toUpperCase()}`);
+            }
+        }
+        
+        // Fade out the overlay
+        function fadeOut() {
+            const success = sendMessage({
+                action: 'fade-out'
+            });
+            
+            if (success) {
+                updateStatus("Fading out overlay");
+            }
+        }
+        
+        // Reset the overlay
+        function resetOverlay() {
+            const success = sendMessage({
+                action: 'reset'
+            });
+            
+            if (success) {
+                updateStatus("Reset overlay");
+            }
+        }
+        
+        // Initialize the application
+        function init() {
+            // Initialize WebSocket
+            initWebSocket();
+            
+            // Set up event listeners for control buttons
+            showQuestionBtn.addEventListener("click", showQuestion);
+            showOptionsBtn.addEventListener("click", showOptions);
+            showContestantBtn.addEventListener("click", showContestant);
+            showCorrectBtn.addEventListener("click", showCorrect);
+            showChaserBtn.addEventListener("click", showChaser);
+            fadeOutBtn.addEventListener("click", fadeOut);
+            resetBtn.addEventListener("click", resetOverlay);
+            
+            // Set up event listeners for question management
+            saveQuestionBtn.addEventListener("click", saveQuestion);
+            loadJsonBtn.addEventListener("click", loadQuestionsFromJson);
+            saveJsonBtn.addEventListener("click", updateQuestionsJson);
+            clearQuestionsBtn.addEventListener("click", clearQuestions);
+            
+            // Initialize question list
+            updateQuestionList();
+            
+            // Start with buttons disabled until connection is established
+            disableControlButtons();
+            
+            // Add some sample questions
+            questions = [
+                {
+                    text: "What is the capital of France?",
+                    options: {
+                        a: "London",
+                        b: "Berlin",
+                        c: "Paris",
+                        d: "Madrid"
+                    },
+                    correctAnswer: "c",
+                    contestantAnswer: "c",
+                    chaserAnswer: "c"
+                },
+                {
+                    text: "Which planet is known as the Red Planet?",
+                    options: {
+                        a: "Venus",
+                        b: "Mars",
+                        c: "Jupiter",
+                        d: "Saturn"
+                    },
+                    correctAnswer: "b",
+                    contestantAnswer: "b",
+                    chaserAnswer: "a"
+                },
+                {
+                    text: "Who wrote 'Romeo and Juliet'?",
+                    options: {
+                        a: "Charles Dickens",
+                        b: "Jane Austen",
+                        c: "William Shakespeare",
+                        d: "Mark Twain"
+                    },
+                    correctAnswer: "c",
+                    contestantAnswer: "b",
+                    chaserAnswer: "c"
+                }
+            ];
+            
+            // Load first question
+            if (questions.length > 0) {
+                currentQuestionIndex = 0;
+                loadQuestionToForm(questions[0]);
+            }
+            
+            // Update UI
+            updateQuestionList();
+            updateQuestionsJson();
+        }
+        
+        // Initialize on page load
+        window.addEventListener("load", init);
+    </script>
+</body>
+</html>
