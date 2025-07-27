@@ -1,7 +1,7 @@
 # thechase-overlay
 An open-source OBS overlay, perfect for live streamed quizzes. Inspired by ITV's TV programme "The Chase".
 ## Prequisites
-Any version of Node.js should work but I recommend you grab the latest one [here](https://nodejs.org/en).
+Any recent version of Node.js should work but I recommend you grab the latest one [here](https://nodejs.org/en).
 
 ## Installation
 Installation is super simple. You can either git clone or just download by clicking the green 'Code' button at the top or just by pressing [here](https://github.com/NAJJJB/thechase-overlay/archive/refs/heads/main.zip). (does the same thing)
